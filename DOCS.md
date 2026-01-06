@@ -193,6 +193,6 @@ Everything is built, tested, and documented.
 
 ---
 
-**Built for Universiti Malaya | GIG1003 - Thinking and Communication Skill**
+**Built for Universiti Malaya | WIX2001 - THINKING AND COMMUNICATION SKILLS**
 
 *Preserving Sama-Bajau maritime culture through digital archives* 🌊

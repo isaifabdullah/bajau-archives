@@ -260,7 +260,7 @@ Your site will be live in 20 minutes.
 ═══════════════════════════════════════════════════════════════════════════════
 
 Built with ❤️ for the Sama-Bajau community
-Universiti Malaya | GIG1003 - Thinking and Communication Skill
+Universiti Malaya | WIX2001 - THINKING AND COMMUNICATION SKILLS
 Preserving maritime culture through digital archives 🌊
 
 ═══════════════════════════════════════════════════════════════════════════════

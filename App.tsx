@@ -31,7 +31,7 @@ const App: React.FC = () => {
               <div className="mb-8 md:mb-0 text-center md:text-left">
                 <span className="brand text-2xl font-black text-white tracking-tighter">Bajau Archives</span>
                 <p className="text-sm mt-3 font-medium opacity-80 uppercase tracking-widest text-teal-500">
-                  GIG1003 Thinking and Communication Skill
+                  WIX2001 THINKING AND COMMUNICATION SKILLS
                 </p>
               </div>
             </div>

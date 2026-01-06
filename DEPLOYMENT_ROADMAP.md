@@ -350,5 +350,5 @@ Your website launches in 20 minutes.
 
 ---
 
-*Built for Universiti Malaya | GIG1003*  
+*Built for Universiti Malaya | WIX2001*  
 *Preserving Sama-Bajau maritime culture* 🌊

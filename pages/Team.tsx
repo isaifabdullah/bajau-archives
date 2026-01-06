@@ -11,11 +11,11 @@ const Team: React.FC = () => {
         <div className="text-center mb-24">
           <div className="inline-flex items-center gap-3 px-5 py-2.5 bg-slate-50 text-slate-900 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] mb-10 border border-slate-100">
             <GraduationCap size={14} className="text-teal-500" />
-            <span>Universiti Malaya • GIG1003</span>
+            <span>Universiti Malaya • WIX2001</span>
           </div>
           <h1 className="text-6xl md:text-8xl font-extrabold text-slate-900 mb-8 tracking-tight-heading">Our Collective</h1>
           <p className="text-lg md:text-xl text-slate-500 max-w-3xl mx-auto font-medium leading-relaxed">
-            A collaborative group of 9 student members exploring the intersection of maritime heritage and digital storytelling for the GIG1003 Thinking and Communication Skill module.
+            A collaborative group of 9 student members exploring the intersection of maritime heritage and digital storytelling for the WIX2001 THINKING AND COMMUNICATION SKILLS module.
           </p>
         </div>
 
@@ -105,7 +105,7 @@ const Team: React.FC = () => {
             </div>
             <div className="flex flex-col items-center lg:items-end gap-3 opacity-20">
               <div className="text-2xl font-bold tracking-tight text-white uppercase">Universiti Malaya</div>
-              <div className="text-[9px] font-bold tracking-[0.4em] text-teal-400 uppercase">GIG1003 Group Project</div>
+              <div className="text-[9px] font-bold tracking-[0.4em] text-teal-400 uppercase">WIX2001 Group Project</div>
             </div>
           </div>
         </div>

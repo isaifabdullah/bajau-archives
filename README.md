@@ -1,6 +1,6 @@
 # 🌊 Bajau Archives: Digital Heritage Preservation
 
-**Universiti Malaya | GIG1003 Thinking and Communication Skill**
+**Universiti Malaya | WIX2001 THINKING AND COMMUNICATION SKILLS**
 
 A secure digital archive designed for the preservation and study of Sama-Bajau maritime culture. This project bridges indigenous oral traditions with modern digital archiving techniques.
 
