@@ -1,13 +1,14 @@
 import { put, del } from '@vercel/blob';
 import { VercelRequest, VercelResponse } from '@vercel/node';
+import { IncomingForm } from 'formidable';
+import * as fs from 'fs';
 
-// Increase body parser limit for larger files
+// Configure for file uploads
 export const config = {
   api: {
-    bodyParser: {
-      sizeLimit: '100mb', // Allow up to 100MB files
-    },
+    bodyParser: false, // Disable automatic body parsing for multipart
   },
+  maxDuration: 60,
 };
 
 export default async function handler(
@@ -16,7 +17,7 @@ export default async function handler(
 ) {
   // Set CORS headers
   response.setHeader('Access-Control-Allow-Origin', '*');
-  response.setHeader('Access-Control-Allow-Methods', 'POST, DELETE, OPTIONS');
+  response.setHeader('Access-Control-Allow-Methods', 'POST, DELETE, OPTIONS, PUT');
   response.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (request.method === 'OPTIONS') {
@@ -25,12 +26,6 @@ export default async function handler(
 
   if (request.method === 'POST') {
     try {
-      const { file, filename } = request.body;
-
-      if (!file || !filename) {
-        return response.status(400).json({ error: 'Missing file or filename' });
-      }
-
       // Check if VERCEL_BLOB_READ_WRITE_TOKEN is configured
       if (!process.env.VERCEL_BLOB_READ_WRITE_TOKEN) {
         console.error('VERCEL_BLOB_READ_WRITE_TOKEN not configured');
@@ -39,16 +34,31 @@ export default async function handler(
         });
       }
 
-      console.log(`Uploading file: ${filename}, size: ${file.length} bytes`);
+      const form = new IncomingForm();
+      const { fields, files } = await new Promise<{ fields: Record<string, string[]>; files: Record<string, any[]> }>((resolve, reject) => {
+        form.parse(request, (err, fields, files) => {
+          if (err) reject(err);
+          else resolve({ fields, files });
+        });
+      });
 
-      const buffer = Buffer.from(file, 'base64');
-      
-      // Check buffer size
-      if (buffer.length > 100 * 1024 * 1024) {
-        return response.status(413).json({ error: 'File too large. Maximum 100MB allowed.' });
+      const file = files.file?.[0];
+      const filename = Array.isArray(fields.filename) ? fields.filename[0] : fields.filename;
+
+      if (!file || !filename) {
+        return response.status(400).json({ error: 'Missing file or filename' });
       }
 
-      const blob = await put(filename, buffer, {
+      console.log(`Uploading file: ${filename}`);
+
+      const fileBuffer = fs.readFileSync(file.filepath);
+      
+      // Check file size (100MB limit)
+      if (fileBuffer.length > 100 * 1024 * 1024) {
+        return response.status(413).json({ error: `File too large (${(fileBuffer.length / 1024 / 1024).toFixed(2)}MB). Maximum 100MB allowed.` });
+      }
+
+      const blob = await put(filename, fileBuffer, {
         access: 'public',
         token: process.env.VERCEL_BLOB_READ_WRITE_TOKEN,
       });
@@ -62,7 +72,14 @@ export default async function handler(
     }
   } else if (request.method === 'DELETE') {
     try {
-      const { filename } = request.body;
+      let body: any;
+      if (typeof request.body === 'string') {
+        body = JSON.parse(request.body);
+      } else {
+        body = request.body;
+      }
+
+      const { filename } = body;
 
       if (!filename) {
         return response.status(400).json({ error: 'Missing filename' });

@@ -1,20 +1,10 @@
 /**
  * Blob Service - Handles file uploads to Vercel Blob
- * Works with Vercel deployment; uses browser-compatible base64 encoding
+ * Uses FormData multipart/form-data for efficient file transfer
  */
 
 interface UploadResponse {
   url: string;
-}
-
-// Convert ArrayBuffer to base64 string (browser-compatible)
-function arrayBufferToBase64(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer);
-  let binary = '';
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary);
 }
 
 export const blobService = {
@@ -26,18 +16,13 @@ export const blobService = {
         throw new Error(`File too large (${(file.size / 1024 / 1024).toFixed(2)}MB). Maximum 100MB allowed.`);
       }
       
-      const buffer = await file.arrayBuffer();
-      const base64 = arrayBufferToBase64(buffer);
-      
-      console.log('Base64 size:', base64.length, 'bytes');
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('filename', `music/${Date.now()}-${file.name.replace(/\s+/g, '-')}`);
       
       const response = await fetch('/api/upload-music', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          file: base64,
-          filename: `music/${Date.now()}-${file.name.replace(/\s+/g, '-')}`
-        })
+        body: formData
       });
 
       if (!response.ok) {
@@ -65,18 +50,13 @@ export const blobService = {
         throw new Error(`Image too large (${(file.size / 1024 / 1024).toFixed(2)}MB). Maximum 50MB allowed.`);
       }
 
-      const buffer = await file.arrayBuffer();
-      const base64 = arrayBufferToBase64(buffer);
-
-      console.log('Base64 size:', base64.length, 'bytes');
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('filename', `images/${Date.now()}-${file.name.replace(/\s+/g, '-')}`);
 
       const response = await fetch('/api/upload-music', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          file: base64,
-          filename: `images/${Date.now()}-${file.name.replace(/\s+/g, '-')}`
-        })
+        body: formData
       });
 
       if (!response.ok) {
