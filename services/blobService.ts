@@ -10,6 +10,12 @@ interface UploadResponse {
 export const blobService = {
   async uploadMusic(file: File): Promise<string> {
     try {
+      console.log('Starting music upload:', file.name, 'Size:', file.size);
+      
+      if (file.size > 50 * 1024 * 1024) { // 50MB limit
+        throw new Error('File too large. Maximum 50MB allowed.');
+      }
+      
       const buffer = await file.arrayBuffer();
       const base64 = Buffer.from(buffer).toString('base64');
       
@@ -23,20 +29,29 @@ export const blobService = {
       });
 
       if (!response.ok) {
-        throw new Error('Upload failed');
+        const errorText = await response.text();
+        console.error('Upload response error:', response.status, errorText);
+        throw new Error(`Upload failed: ${response.statusText}`);
       }
 
       const data: UploadResponse = await response.json();
+      console.log('Upload successful:', data.url);
       return data.url;
     } catch (error) {
       console.error('Error uploading music:', error);
-      // Fallback: return base64 data URL for local development
-      return URL.createObjectURL(file);
+      alert(`Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw error;
     }
   },
 
   async uploadImage(file: File): Promise<string> {
     try {
+      console.log('Starting image upload:', file.name, 'Size:', file.size);
+      
+      if (file.size > 10 * 1024 * 1024) { // 10MB limit for images
+        throw new Error('Image too large. Maximum 10MB allowed.');
+      }
+
       const buffer = await file.arrayBuffer();
       const base64 = Buffer.from(buffer).toString('base64');
 
@@ -50,14 +65,18 @@ export const blobService = {
       });
 
       if (!response.ok) {
-        throw new Error('Upload failed');
+        const errorText = await response.text();
+        console.error('Upload response error:', response.status, errorText);
+        throw new Error(`Upload failed: ${response.statusText}`);
       }
 
       const data: UploadResponse = await response.json();
+      console.log('Image upload successful:', data.url);
       return data.url;
     } catch (error) {
       console.error('Error uploading image:', error);
-      return URL.createObjectURL(file);
+      alert(`Image upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw error;
     }
   },
 

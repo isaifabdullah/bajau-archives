@@ -59,12 +59,18 @@ const Repository: React.FC = () => {
     };
     const handlePlay = () => setIsPlaying(true);
     const handlePause = () => setIsPlaying(false);
+    const handleError = (e: Event) => {
+      console.error('Audio error:', (e.target as HTMLAudioElement).error);
+      setIsPlaying(false);
+      alert('Error loading audio. The file may be invalid or inaccessible.');
+    };
 
     audio.addEventListener('timeupdate', handleTimeUpdate);
     audio.addEventListener('loadedmetadata', handleLoadedMetadata);
     audio.addEventListener('ended', handleEnded);
     audio.addEventListener('play', handlePlay);
     audio.addEventListener('pause', handlePause);
+    audio.addEventListener('error', handleError);
 
     return () => {
       audio.removeEventListener('timeupdate', handleTimeUpdate);
@@ -72,6 +78,7 @@ const Repository: React.FC = () => {
       audio.removeEventListener('ended', handleEnded);
       audio.removeEventListener('play', handlePlay);
       audio.removeEventListener('pause', handlePause);
+      audio.removeEventListener('error', handleError);
     };
   }, []);
 
@@ -159,14 +166,26 @@ const Repository: React.FC = () => {
       if (isPlaying) {
         audioRef.current?.pause();
       } else {
-        audioRef.current?.play().catch(err => console.error('Playback error:', err));
+        audioRef.current?.play().catch(err => {
+          console.error('Playback error:', err);
+          alert('Unable to play audio. File may not be available or there may be a CORS issue.');
+        });
       }
     } else {
+      if (!song.audioUrl) {
+        alert('No audio file available for this song.');
+        return;
+      }
       setCurrentSong(song);
       if (audioRef.current) {
-        audioRef.current.src = song.audioUrl || '';
+        audioRef.current.src = song.audioUrl;
         audioRef.current.volume = volume;
-        audioRef.current.play().catch(err => console.error('Playback error:', err));
+        audioRef.current.load();
+        audioRef.current.play().catch(err => {
+          console.error('Playback error:', err);
+          console.error('Trying to play:', song.audioUrl);
+          alert('Unable to play audio. The file may be invalid or inaccessible. Check browser console (F12) for details.');
+        });
       }
     }
   };
