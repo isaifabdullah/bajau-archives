@@ -39,9 +39,10 @@ export const blobService = {
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Upload response error:', response.status, errorText);
-        throw new Error(`Upload failed: ${response.statusText}`);
+        const errorData = await response.json().catch(() => ({}));
+        const errorMsg = errorData.error || `Upload failed with status ${response.status}`;
+        console.error('Upload response error:', response.status, errorMsg);
+        throw new Error(errorMsg);
       }
 
       const data: UploadResponse = await response.json();
@@ -75,9 +76,10 @@ export const blobService = {
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Upload response error:', response.status, errorText);
-        throw new Error(`Upload failed: ${response.statusText}`);
+        const errorData = await response.json().catch(() => ({}));
+        const errorMsg = errorData.error || `Upload failed with status ${response.status}`;
+        console.error('Upload response error:', response.status, errorMsg);
+        throw new Error(errorMsg);
       }
 
       const data: UploadResponse = await response.json();
