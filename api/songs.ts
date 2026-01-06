@@ -1,4 +1,4 @@
-import { kv } from '@vercel/kv';
+import { put, get, del } from '@vercel/blob';
 import { VercelRequest, VercelResponse } from '@vercel/node';
 
 export const config = {
@@ -17,6 +17,40 @@ interface Song {
   createdAt: number;
 }
 
+const MANIFEST_KEY = 'bajau-songs-manifest.json';
+
+async function getSongsFromManifest(): Promise<Song[]> {
+  try {
+    if (!process.env.VERCEL_BLOB_READ_WRITE_TOKEN) {
+      console.warn('Blob storage not configured');
+      return [];
+    }
+
+    const response = await get(MANIFEST_KEY, {
+      token: process.env.VERCEL_BLOB_READ_WRITE_TOKEN,
+    });
+
+    if (!response) return [];
+
+    const text = await response.text();
+    return JSON.parse(text);
+  } catch (error) {
+    console.log('Manifest file not found or error reading:', error);
+    return [];
+  }
+}
+
+async function saveSongsToManifest(songs: Song[]): Promise<void> {
+  if (!process.env.VERCEL_BLOB_READ_WRITE_TOKEN) {
+    throw new Error('Blob storage not configured');
+  }
+
+  await put(MANIFEST_KEY, JSON.stringify(songs, null, 2), {
+    access: 'private',
+    token: process.env.VERCEL_BLOB_READ_WRITE_TOKEN,
+  });
+}
+
 export default async function handler(
   request: VercelRequest,
   response: VercelResponse
@@ -33,8 +67,8 @@ export default async function handler(
   try {
     // GET all songs
     if (request.method === 'GET') {
-      const songs = await kv.get('bajau_songs');
-      return response.status(200).json({ songs: songs || [] });
+      const songs = await getSongsFromManifest();
+      return response.status(200).json({ songs });
     }
 
     // POST - add new song
@@ -46,13 +80,13 @@ export default async function handler(
       };
 
       // Get existing songs
-      const existingSongs = (await kv.get('bajau_songs')) as Song[] || [];
+      const songs = await getSongsFromManifest();
 
       // Add new song to the beginning
-      const updatedSongs = [song, ...existingSongs];
+      const updatedSongs = [song, ...songs];
 
-      // Save back to KV
-      await kv.set('bajau_songs', updatedSongs);
+      // Save back
+      await saveSongsToManifest(updatedSongs);
 
       console.log('Song added:', song.id);
       return response.status(201).json({ success: true, song });
@@ -67,13 +101,13 @@ export default async function handler(
       }
 
       // Get existing songs
-      const existingSongs = (await kv.get('bajau_songs')) as Song[] || [];
+      const songs = await getSongsFromManifest();
 
       // Filter out the song to delete
-      const updatedSongs = existingSongs.filter(s => s.id !== id);
+      const updatedSongs = songs.filter(s => s.id !== id);
 
-      // Save back to KV
-      await kv.set('bajau_songs', updatedSongs);
+      // Save back
+      await saveSongsToManifest(updatedSongs);
 
       console.log('Song deleted:', id);
       return response.status(200).json({ success: true });
@@ -83,14 +117,14 @@ export default async function handler(
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.error('Database error:', errorMessage);
-    
-    // Check if it's a KV connection issue
-    if (errorMessage.includes('KV') || errorMessage.includes('VERCEL')) {
+
+    if (errorMessage.includes('Blob') || errorMessage.includes('not configured')) {
       return response.status(503).json({ 
-        error: 'Database not configured. Please enable Vercel KV in your project settings.' 
+        error: 'Storage not configured. Please check VERCEL_BLOB_READ_WRITE_TOKEN.' 
       });
     }
 
     return response.status(500).json({ error: `Server error: ${errorMessage}` });
   }
 }
+
