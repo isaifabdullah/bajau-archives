@@ -7,7 +7,7 @@ import { blobService } from '../services/blobService';
 import { 
   Lock, Play, Pause, Music, Waves, ShieldAlert, 
   Plus, X, LogOut, ShieldCheck, Upload, Volume2, Trash2,
-  Search, Loader2
+  Search, Loader2, Volume, VolumeX, SkipBack, SkipForward
 } from 'lucide-react';
 
 const Repository: React.FC = () => {
@@ -24,6 +24,10 @@ const Repository: React.FC = () => {
   const [currentSong, setCurrentSong] = useState<Song | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [volume, setVolume] = useState(1);
+  const [isMuted, setIsMuted] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   
   const [newSong, setNewSong] = useState<Partial<Song>>({
@@ -40,6 +44,35 @@ const Repository: React.FC = () => {
       setIsAdmin(false);
     }
     loadData();
+  }, []);
+
+  // Audio event listeners
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
+    const handleLoadedMetadata = () => setDuration(audio.duration);
+    const handleEnded = () => {
+      setIsPlaying(false);
+      setCurrentTime(0);
+    };
+    const handlePlay = () => setIsPlaying(true);
+    const handlePause = () => setIsPlaying(false);
+
+    audio.addEventListener('timeupdate', handleTimeUpdate);
+    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+    audio.addEventListener('ended', handleEnded);
+    audio.addEventListener('play', handlePlay);
+    audio.addEventListener('pause', handlePause);
+
+    return () => {
+      audio.removeEventListener('timeupdate', handleTimeUpdate);
+      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      audio.removeEventListener('ended', handleEnded);
+      audio.removeEventListener('play', handlePlay);
+      audio.removeEventListener('pause', handlePause);
+    };
   }, []);
 
   const loadData = async () => {
@@ -125,19 +158,59 @@ const Repository: React.FC = () => {
     if (currentSong?.id === song.id) {
       if (isPlaying) {
         audioRef.current?.pause();
-        setIsPlaying(false);
       } else {
-        audioRef.current?.play();
-        setIsPlaying(true);
+        audioRef.current?.play().catch(err => console.error('Playback error:', err));
       }
     } else {
       setCurrentSong(song);
-      setIsPlaying(true);
       if (audioRef.current) {
         audioRef.current.src = song.audioUrl || '';
-        audioRef.current.play();
+        audioRef.current.volume = volume;
+        audioRef.current.play().catch(err => console.error('Playback error:', err));
       }
     }
+  };
+
+  const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newTime = parseFloat(e.target.value);
+    setCurrentTime(newTime);
+    if (audioRef.current) {
+      audioRef.current.currentTime = newTime;
+    }
+  };
+
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVolume = parseFloat(e.target.value);
+    setVolume(newVolume);
+    if (audioRef.current) {
+      audioRef.current.volume = newVolume;
+    }
+    if (newVolume > 0) setIsMuted(false);
+  };
+
+  const toggleMute = () => {
+    if (audioRef.current) {
+      if (isMuted) {
+        audioRef.current.volume = volume;
+        setIsMuted(false);
+      } else {
+        audioRef.current.volume = 0;
+        setIsMuted(true);
+      }
+    }
+  };
+
+  const skipTo = (seconds: number) => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = Math.min(Math.max(0, currentTime + seconds), duration);
+    }
+  };
+
+  const formatTime = (time: number) => {
+    if (!isFinite(time)) return '0:00';
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
   // --- Search Logic ---
@@ -188,7 +261,12 @@ const Repository: React.FC = () => {
 
   return (
     <div className="min-h-screen pt-40 pb-40 bg-white">
-      <audio ref={audioRef} onEnded={() => setIsPlaying(false)} />
+      <audio 
+        ref={audioRef} 
+        crossOrigin="anonymous"
+        preload="metadata"
+        controls={false}
+      />
       
       <div className="max-w-7xl mx-auto px-6 lg:px-12">
         <div className="mb-16 flex flex-col md:flex-row md:items-end justify-between gap-10">
@@ -334,22 +412,86 @@ const Repository: React.FC = () => {
       {/* Global Player Bar */}
       {currentSong && !isDeleteMode && (
         <div className="fixed bottom-10 left-6 right-6 z-50 animate-slideUp">
-          <div className="max-w-4xl mx-auto glass-card rounded-[2.5rem] p-5 shadow-2xl border border-white/50 flex items-center gap-6">
-            <div className="w-14 h-14 bg-slate-900 rounded-2xl flex items-center justify-center text-teal-400">
-              <Music size={20} className={isPlaying ? 'animate-pulse' : ''} />
+          <div className="max-w-4xl mx-auto glass-card rounded-[2.5rem] p-6 shadow-2xl border border-white/50 flex flex-col gap-5">
+            {/* Progress Bar */}
+            <div className="flex items-center gap-3">
+              <span className="text-[10px] font-bold text-slate-500 min-w-10 text-right">
+                {formatTime(currentTime)}
+              </span>
+              <input 
+                type="range"
+                min="0"
+                max={duration || 0}
+                value={currentTime}
+                onChange={handleProgressChange}
+                className="flex-grow h-2 bg-slate-200 rounded-full appearance-none cursor-pointer accent-teal-500 hover:accent-teal-600 transition-all"
+                style={{
+                  background: duration ? `linear-gradient(to right, rgb(20, 184, 166) 0%, rgb(20, 184, 166) ${(currentTime / duration) * 100}%, rgb(226, 232, 240) ${(currentTime / duration) * 100}%, rgb(226, 232, 240) 100%)` : ''
+                }}
+              />
+              <span className="text-[10px] font-bold text-slate-500 min-w-10">
+                {formatTime(duration)}
+              </span>
             </div>
-            <div className="flex-grow">
-              <h4 className="text-slate-900 font-bold tracking-tight text-sm">{currentSong.title}</h4>
-              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{currentSong.performer}</p>
-            </div>
-            <div className="flex items-center gap-4">
-              <Volume2 className="text-slate-300 hidden sm:block" size={18} />
-              <button 
-                onClick={() => togglePlay(currentSong)}
-                className="w-12 h-12 bg-slate-900 text-white rounded-xl flex items-center justify-center hover:bg-teal-500 transition-colors"
-              >
-                {isPlaying ? <Pause size={18} /> : <Play fill="currentColor" size={18} className="ml-0.5" />}
-              </button>
+
+            {/* Controls */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-14 h-14 bg-slate-900 rounded-2xl flex items-center justify-center text-teal-400 flex-shrink-0">
+                  <Music size={20} className={isPlaying ? 'animate-pulse' : ''} />
+                </div>
+                <div className="min-w-0">
+                  <h4 className="text-slate-900 font-bold tracking-tight text-sm truncate">{currentSong.title}</h4>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest truncate">{currentSong.performer}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                {/* Skip Back */}
+                <button 
+                  onClick={() => skipTo(-5)}
+                  className="w-10 h-10 bg-slate-100 text-slate-600 rounded-xl flex items-center justify-center hover:bg-teal-100 hover:text-teal-600 transition-colors hidden sm:flex"
+                  title="Skip back 5 seconds"
+                >
+                  <SkipBack size={16} />
+                </button>
+
+                {/* Play/Pause */}
+                <button 
+                  onClick={() => togglePlay(currentSong)}
+                  className="w-12 h-12 bg-slate-900 text-white rounded-xl flex items-center justify-center hover:bg-teal-600 active:scale-95 transition-all shadow-lg"
+                >
+                  {isPlaying ? <Pause size={20} /> : <Play fill="currentColor" size={20} className="ml-0.5" />}
+                </button>
+
+                {/* Skip Forward */}
+                <button 
+                  onClick={() => skipTo(5)}
+                  className="w-10 h-10 bg-slate-100 text-slate-600 rounded-xl flex items-center justify-center hover:bg-teal-100 hover:text-teal-600 transition-colors hidden sm:flex"
+                  title="Skip forward 5 seconds"
+                >
+                  <SkipForward size={16} />
+                </button>
+
+                {/* Volume Control */}
+                <div className="flex items-center gap-2 hidden md:flex">
+                  <button 
+                    onClick={toggleMute}
+                    className="w-10 h-10 bg-slate-100 text-slate-600 rounded-xl flex items-center justify-center hover:bg-teal-100 hover:text-teal-600 transition-colors"
+                  >
+                    {isMuted || volume === 0 ? <VolumeX size={16} /> : <Volume size={16} />}
+                  </button>
+                  <input 
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    value={isMuted ? 0 : volume}
+                    onChange={handleVolumeChange}
+                    className="w-24 h-2 bg-slate-200 rounded-full appearance-none cursor-pointer accent-teal-500 hover:accent-teal-600"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>
