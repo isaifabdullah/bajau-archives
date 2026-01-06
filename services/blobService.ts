@@ -1,10 +1,20 @@
 /**
  * Blob Service - Handles file uploads to Vercel Blob
- * Works with Vercel deployment; falls back to base64 in dev
+ * Works with Vercel deployment; uses browser-compatible base64 encoding
  */
 
 interface UploadResponse {
   url: string;
+}
+
+// Convert ArrayBuffer to base64 string (browser-compatible)
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
 }
 
 export const blobService = {
@@ -17,7 +27,7 @@ export const blobService = {
       }
       
       const buffer = await file.arrayBuffer();
-      const base64 = Buffer.from(buffer).toString('base64');
+      const base64 = arrayBufferToBase64(buffer);
       
       const response = await fetch('/api/upload-music', {
         method: 'POST',
@@ -53,7 +63,7 @@ export const blobService = {
       }
 
       const buffer = await file.arrayBuffer();
-      const base64 = Buffer.from(buffer).toString('base64');
+      const base64 = arrayBufferToBase64(buffer);
 
       const response = await fetch('/api/upload-music', {
         method: 'POST',
