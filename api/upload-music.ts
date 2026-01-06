@@ -1,10 +1,28 @@
 import { put, del } from '@vercel/blob';
 import { VercelRequest, VercelResponse } from '@vercel/node';
 
+// Increase body parser limit for larger files
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '100mb', // Allow up to 100MB files
+    },
+  },
+};
+
 export default async function handler(
   request: VercelRequest,
   response: VercelResponse
 ) {
+  // Set CORS headers
+  response.setHeader('Access-Control-Allow-Origin', '*');
+  response.setHeader('Access-Control-Allow-Methods', 'POST, DELETE, OPTIONS');
+  response.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (request.method === 'OPTIONS') {
+    return response.status(200).end();
+  }
+
   if (request.method === 'POST') {
     try {
       const { file, filename } = request.body;
@@ -21,12 +39,21 @@ export default async function handler(
         });
       }
 
+      console.log(`Uploading file: ${filename}, size: ${file.length} bytes`);
+
       const buffer = Buffer.from(file, 'base64');
+      
+      // Check buffer size
+      if (buffer.length > 100 * 1024 * 1024) {
+        return response.status(413).json({ error: 'File too large. Maximum 100MB allowed.' });
+      }
+
       const blob = await put(filename, buffer, {
         access: 'public',
         token: process.env.VERCEL_BLOB_READ_WRITE_TOKEN,
       });
 
+      console.log(`Upload successful: ${blob.url}`);
       return response.status(200).json({ url: blob.url });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);

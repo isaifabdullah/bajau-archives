@@ -20,14 +20,16 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
 export const blobService = {
   async uploadMusic(file: File): Promise<string> {
     try {
-      console.log('Starting music upload:', file.name, 'Size:', file.size);
+      console.log('Starting music upload:', file.name, 'File size:', file.size, 'bytes');
       
-      if (file.size > 50 * 1024 * 1024) { // 50MB limit
-        throw new Error('File too large. Maximum 50MB allowed.');
+      if (file.size > 100 * 1024 * 1024) { // 100MB limit
+        throw new Error(`File too large (${(file.size / 1024 / 1024).toFixed(2)}MB). Maximum 100MB allowed.`);
       }
       
       const buffer = await file.arrayBuffer();
       const base64 = arrayBufferToBase64(buffer);
+      
+      console.log('Base64 size:', base64.length, 'bytes');
       
       const response = await fetch('/api/upload-music', {
         method: 'POST',
@@ -57,14 +59,16 @@ export const blobService = {
 
   async uploadImage(file: File): Promise<string> {
     try {
-      console.log('Starting image upload:', file.name, 'Size:', file.size);
+      console.log('Starting image upload:', file.name, 'File size:', file.size, 'bytes');
       
-      if (file.size > 10 * 1024 * 1024) { // 10MB limit for images
-        throw new Error('Image too large. Maximum 10MB allowed.');
+      if (file.size > 50 * 1024 * 1024) { // 50MB limit for images
+        throw new Error(`Image too large (${(file.size / 1024 / 1024).toFixed(2)}MB). Maximum 50MB allowed.`);
       }
 
       const buffer = await file.arrayBuffer();
       const base64 = arrayBufferToBase64(buffer);
+
+      console.log('Base64 size:', base64.length, 'bytes');
 
       const response = await fetch('/api/upload-music', {
         method: 'POST',
