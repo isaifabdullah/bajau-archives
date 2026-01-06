@@ -1,0 +1,88 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bajau Archives</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --sea-deep: #0c4a6e;
+            --sea-mid: #0d9488;
+            --sea-light: #2dd4bf;
+            --sea-foam: #f8fafc;
+        }
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            scroll-behavior: smooth;
+            background-color: var(--sea-foam);
+            color: #0f172a;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            line-height: 1.6;
+        }
+        h1, h2, h3, h4, h5, h6, .brand { 
+            font-family: 'Outfit', sans-serif; 
+            letter-spacing: -0.01em;
+            font-weight: 700;
+        }
+        .newspaper-body {
+            font-family: 'Libre Baskerville', serif;
+            line-height: 1.8;
+            letter-spacing: 0.01em;
+        }
+        .ocean-gradient {
+            background: linear-gradient(135deg, #075985 0%, #0d9488 100%);
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+            100% { transform: translateY(0px); }
+        }
+        .tracking-tight-heading {
+            letter-spacing: -0.02em;
+        }
+        .drop-cap::first-letter {
+            float: left;
+            font-size: 4.5rem;
+            line-height: 1;
+            padding-right: 0.75rem;
+            padding-top: 0.25rem;
+            font-weight: 800;
+            color: #0d9488;
+            font-family: 'Outfit', sans-serif;
+            margin-top: 0.5rem;
+        }
+        ::selection {
+            background: #2dd4bf;
+            color: white;
+        }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react-router-dom": "https://esm.sh/react-router-dom@^7.11.0",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body class="text-slate-900 overflow-x-hidden selection:bg-teal-500/20">
+    <div id="root"></div>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>

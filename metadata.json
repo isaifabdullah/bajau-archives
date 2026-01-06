@@ -1,0 +1,7 @@
+{
+  "name": "Bajau Archives",
+  "description": "A secure digital archive for the preservation of Bajau community songs and cultural heritage, built for Universiti Malaya research.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
