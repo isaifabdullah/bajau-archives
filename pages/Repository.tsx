@@ -35,15 +35,16 @@ const Repository: React.FC = () => {
   });
 
   useEffect(() => {
-    const authRole = localStorage.getItem('bajau_access_role');
-    if (authRole === 'admin') {
-      setIsAuthorized(true);
-      setIsAdmin(true);
-    } else if (authRole === 'viewer') {
-      setIsAuthorized(true);
-      setIsAdmin(false);
-    }
+    // Don't check localStorage - go straight to the repository
+    setIsAuthorized(false);
     loadData();
+    
+    // Refresh data every 5 seconds for real-time sync across browsers
+    const interval = setInterval(() => {
+      loadData();
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
   // Audio event listeners
@@ -94,26 +95,20 @@ const Repository: React.FC = () => {
     if (password === ADMIN_KEY) {
       setIsAuthorized(true);
       setIsAdmin(true);
-      localStorage.setItem('bajau_access_role', 'admin');
-      setError('');
-    } else if (password === ACCESS_KEY) {
-      setIsAuthorized(true);
-      setIsAdmin(false);
-      localStorage.setItem('bajau_access_role', 'viewer');
       setError('');
     } else {
-      setError('Invalid credentials.');
+      setError('Invalid password. Please try again.');
     }
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('bajau_access_role');
     setIsAuthorized(false);
     setIsAdmin(false);
     setIsDeleteMode(false);
     if (audioRef.current) audioRef.current.pause();
     setIsPlaying(false);
     setCurrentSong(null);
+    setPassword('');
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -134,30 +129,40 @@ const Repository: React.FC = () => {
 
   const handleAddSong = async (e: React.FormEvent) => {
     e.preventDefault();
-    const songToAdd: Song = {
-      id: Date.now().toString(),
-      title: newSong.title || 'Untitled',
-      genre: newSong.genre || 'Traditional',
-      performer: newSong.performer || 'Unknown',
-      description: newSong.description || '',
-      duration: newSong.duration || '0:00',
-      origin: newSong.origin || 'Unknown',
-      audioUrl: newSong.audioUrl
-    };
-    
-    await dataService.saveSong(songToAdd);
-    await loadData();
-    setIsModalOpen(false);
-    setNewSong({ title: '', genre: '', performer: '', description: '', duration: '', origin: '', audioUrl: '' });
+    try {
+      const songToAdd: Song = {
+        id: Date.now().toString(),
+        title: newSong.title || 'Untitled',
+        genre: newSong.genre || 'Traditional',
+        performer: newSong.performer || 'Unknown',
+        description: newSong.description || '',
+        duration: newSong.duration || '0:00',
+        origin: newSong.origin || 'Unknown',
+        audioUrl: newSong.audioUrl || ''
+      };
+      
+      await dataService.saveSong(songToAdd);
+      await loadData(); // Refresh immediately
+      setIsModalOpen(false);
+      setNewSong({ title: '', genre: '', performer: '', description: '', duration: '', origin: '', audioUrl: '' });
+      alert('Song added successfully!');
+    } catch (error) {
+      alert(`Failed to add song: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   };
 
   const handleRemoveSong = async (id: string) => {
-    await dataService.deleteSong(id);
-    await loadData();
-    if (currentSong?.id === id) {
-      audioRef.current?.pause();
-      setIsPlaying(false);
-      setCurrentSong(null);
+    try {
+      await dataService.deleteSong(id);
+      await loadData(); // Refresh immediately
+      if (currentSong?.id === id) {
+        audioRef.current?.pause();
+        setIsPlaying(false);
+        setCurrentSong(null);
+      }
+      alert('Song deleted successfully!');
+    } catch (error) {
+      alert(`Failed to delete song: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
